@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes 3-Tier Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .form-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .items-section {
+            margin-top: 30px;
+        }
+        
+        .items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .items-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+        
+        .refresh-btn {
+            background: #28a745;
+            padding: 10px 20px;
+        }
+        
+        .refresh-btn:hover {
+            background: #218838;
+        }
+        
+        .item {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .item-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .item-description {
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        
+        .item-date {
+            color: #999;
+            font-size: 0.85em;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .status {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Kubernetes Demo</h1>
+        <p class="subtitle">3-Tier Microservices Application with Auto-scaling</p>
+        
+        <div id="status" class="status hidden"></div>
+        
+        <div class="form-section">
+            <h2>Add New Item</h2>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" placeholder="Enter item name" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" placeholder="Enter item description" required></textarea>
+            </div>
+            <button onclick="addItem()">Add Item</button>
+        </div>
+
+        <div class="items-section">
+            <div class="items-header">
+                <h2>Items List</h2>
+                <button class="refresh-btn" onclick="loadItems()">🔄 Refresh</button>
+            </div>
+            <div id="items"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+
+        // Load items on page load
+        window.addEventListener('DOMContentLoaded', loadItems);
+
+        async function loadItems() {
+            try {
+                showStatus('Loading items...', 'success');
+                const response = await fetch(`${API_URL}/items`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const items = await response.json();
+                const itemsContainer = document.getElementById('items');
+                
+                if (items.length === 0) {
+                    itemsContainer.innerHTML = '<div class="empty-state">No items yet. Add your first item above! 📝</div>';
+                } else {
+                    itemsContainer.innerHTML = items.map(item => `
+                        <div class="item">
+                            <div class="item-name">${escapeHtml(item.name)}</div>
+                            <div class="item-description">${escapeHtml(item.description)}</div>
+                            <div class="item-date">Created: ${new Date(item.created_at).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+                }
+                
+                hideStatus();
+            } catch (err) {
+                console.error('Error loading items:', err);
+                showStatus(`Error loading items: ${err.message}`, 'error');
+            }
+        }
+
+        async function addItem() {
+            const name = document.getElementById('name').value.trim();
+            const description = document.getElementById('description').value.trim();
+            
+            if (!name || !description) {
+                showStatus('Please fill in both name and description', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Adding item...', 'success');
+                const response = await fetch(`${API_URL}/items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // Clear form
+                document.getElementById('name').value = '';
+                document.getElementById('description').value = '';
+                
+                // Reload items
+                await loadItems();
+                showStatus('Item added successfully!', 'success');
+                setTimeout(hideStatus, 3000);
+            } catch (err) {
+                console.error('Error adding item:', err);
+                showStatus(`Error adding item: ${err.message}`, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function hideStatus() {
+            const status = document.getElementById('status');
+            status.className = 'status hidden';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Add keyboard shortcut: Enter to submit
+        document.getElementById('name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('description').focus();
+        });
+        
+        document.getElementById('description').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) addItem();
+        });
+    </script>
+</body>
+</html>

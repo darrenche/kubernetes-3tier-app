@@ -2,6 +2,38 @@
 
 A production-ready demonstration of containerized microservices architecture deployed on Kubernetes with auto-scaling, persistent storage, and health monitoring.
 
+
+## Architecture
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │ HTTP
+       ▼
+┌─────────────────────────────┐
+│  Frontend (nginx)           │
+│  - 3 replicas               │
+│  - LoadBalancer service     │
+│  - HPA (2-10 pods)          │
+└──────┬──────────────────────┘
+       │ /api/* → proxy
+       ▼
+┌─────────────────────────────┐
+│  Backend (Node.js/Express)  │
+│  - 2 replicas               │
+│  - ClusterIP service        │
+│  - HPA (2-5 pods)           │
+└──────┬──────────────────────┘
+       │ postgres-service:5432
+       ▼
+┌─────────────────────────────┐
+│  Database (PostgreSQL)      │
+│  - StatefulSet (1 replica)  │
+│  - PersistentVolume (1GB)   │
+│  - Headless service         │
+└─────────────────────────────┘
+```
+
 ### Components
 
 **Frontend Layer**

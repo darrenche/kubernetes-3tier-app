@@ -34,6 +34,21 @@ A production-ready demonstration of containerized microservices architecture dep
 └─────────────────────────────┘
 ```
 
+## Screenshots
+
+### Application UI
+![Application Interface](./screenshots/app-ui.png)
+
+### Kubernetes Resources
+![kubectl get all output](./screenshots/kubegetall.png)
+
+### Auto-scaling Status
+![HPA Status](./screenshots/kubegethpa.png)
+
+### Persistent Storage
+![PVC Status](./screenshots/kubegetpvc.png)
+
+
 ### Components
 
 **Frontend Layer**

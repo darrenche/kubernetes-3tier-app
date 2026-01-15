@@ -237,7 +237,7 @@ kubectl delete pvc postgres-storage-postgres-0
 
 ## Author
 
-Darren He - [GitHub](https://github.com/YOUR_USERNAME) - [LinkedIn](https://linkedin.com/in/darrenche)
+Darren He - [GitHub](https://github.com/darrenche) - [LinkedIn](https://linkedin.com/in/darrenche)
 
 ## License
 
